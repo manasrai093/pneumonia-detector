@@ -12,14 +12,23 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB limit
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
 
-# Load your trained model
-# Update this path to your actual model location
+# ============================================
+# 🔧 FIXED: Load model without compiling
+# ============================================
 MODEL_PATH = 'model/pneumonia_model.h5'
-model = load_model(MODEL_PATH)
 
-# Model configuration (based on your training)
-IMG_SIZE = 150  # Your model uses 150x150 images
-IS_GRAYSCALE = True  # Your model was trained on grayscale images
+# Load the model WITHOUT its training configuration
+model = load_model(MODEL_PATH, compile=False)
+
+# Recompile with a compatible optimizer
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+print("✅ Model loaded and recompiled successfully!")
+# ============================================
+
+# Model configuration
+IMG_SIZE = 150
+IS_GRAYSCALE = True
 
 def allowed_file(filename):
     """Check if file has allowed extension"""
