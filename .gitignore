@@ -1,0 +1,18 @@
+# Model files (too large for GitHub)
+model/*.h5
+model/*.pkl
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+.env
+
+# Uploaded images
+static/uploads/*
+
+# System files
+.DS_Store
+Thumbs.db

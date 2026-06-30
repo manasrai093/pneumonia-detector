@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-Powered Pneumonia Detection</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    /* ── Custom Properties ── */
+    :root {
+      --primary: #2563eb;
+      --secondary: #1e40af;
+      --success: #10b981;
+      --danger: #ef4444;
+      --glass-bg: rgba(255, 255, 255, 0.12);
+      --glass-border: rgba(255, 255, 255, 0.25);
+    }
+
+    /* ── Base ── */
+    * { scroll-behavior: smooth; box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #1e293b;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated Gradient Background ── */
+    .bg-medical {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 30%, #1e40af 60%, #0f172a 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 12s ease infinite;
+    }
+    @keyframes gradientShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ── Floating Medical Elements ── */
+    .float-el {
+      position: absolute;
+      opacity: 0.04;
+      animation: floatUp linear infinite;
+      pointer-events: none;
+      color: #60a5fa;
+    }
+    @keyframes floatUp {
+      0%   { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10%  { opacity: 0.04; }
+      90%  { opacity: 0.04; }
+      100% { transform: translateY(-200px) rotate(360deg); opacity: 0; }
+    }
+
+    /* ── Glassmorphism ── */
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 1rem;
+    }
+    .glass-white {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(37, 99, 235, 0.1);
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(37, 99, 235, 0.08);
+    }
+
+    /* ── Navbar ── */
+    #navbar {
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    #navbar.scrolled {
+      background: rgba(15, 23, 42, 0.95) !important;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    }
+
+    /* ── Fade-in Scroll Animations ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .fade-in-left {
+      opacity: 0;
+      transform: translateX(-40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-in-left.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .fade-in-right {
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .fade-in-right.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ── Hero ── */
+    .hero-gradient-text {
+      background: linear-gradient(135deg, #60a5fa, #a78bfa, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .pulse-ring {
+      animation: pulseRing 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+    }
+    @keyframes pulseRing {
+      0%   { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+      70%  { box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    }
+
+    /* ── Symptom Cards ── */
+    .symptom-card {
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: default;
+    }
+    .symptom-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(37, 99, 235, 0.12);
+    }
+
+    /* ── Upload Drop Zone ── */
+    #drop-zone {
+      border: 2.5px dashed #2563eb;
+      border-radius: 1rem;
+      transition: all 0.3s;
+      animation: dropPulse 3s ease-in-out infinite;
+      cursor: pointer;
+    }
+    #drop-zone.drag-over {
+      background: rgba(37, 99, 235, 0.08);
+      border-color: #1d4ed8;
+      transform: scale(1.01);
+      animation: none;
+    }
+    @keyframes dropPulse {
+      0%, 100% { border-color: #2563eb; box-shadow: 0 0 0 0 rgba(37,99,235,0.2); }
+      50%       { border-color: #60a5fa; box-shadow: 0 0 0 8px rgba(37,99,235,0); }
+    }
+
+    /* ── Progress Bar ── */
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid rgba(37,99,235,0.2);
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Animated Counter ── */
+    .counter { font-variant-numeric: tabular-nums; }
+
+    /* ── How It Works Step ── */
+    .step-card {
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .step-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
+    }
+
+    /* ── Toast ── */
+    #toast-container {
+      position: fixed;
+      top: 80px;
+      right: 1.25rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .toast {
+      padding: 0.85rem 1.2rem;
+      border-radius: 0.75rem;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      max-width: 320px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      animation: slideIn 0.35s ease forwards;
+    }
+    .toast.out { animation: slideOut 0.35s ease forwards; }
+    @keyframes slideIn  { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+
+    /* ── Back to Top ── */
+    #back-to-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 1.5rem;
+      z-index: 999;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563eb, #1e40af);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s, transform 0.3s, box-shadow 0.3s;
+      box-shadow: 0 4px 16px rgba(37,99,235,0.4);
+      border: none;
+    }
+    #back-to-top.visible { opacity: 1; transform: translateY(0); }
+    #back-to-top:hover { box-shadow: 0 8px 24px rgba(37,99,235,0.6); transform: translateY(-3px); }
+
+    /* ── Result Card ── */
+    #result-card {
+      animation: resultSlide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes resultSlide {
+      from { transform: scale(0.85); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    /* ── Heartbeat SVG line ── */
+    .heartbeat-line {
+      stroke-dasharray: 600;
+      stroke-dashoffset: 600;
+      animation: drawLine 2s ease forwards;
+    }
+    @keyframes drawLine { to { stroke-dashoffset: 0; } }
+
+    /* ── Trust Badges ── */
+    .trust-badge {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .trust-badge:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(37,99,235,0.15);
+    }
+
+    /* ── Section BG Alternation ── */
+    .section-dark  { background: #0f172a; }
+    .section-mid   { background: #0d1b2e; }
+    .section-light { background: #f0f7ff; }
+    .section-white { background: #ffffff; }
+
+    /* ── Responsive Nav Toggle ── */
+    #mobile-menu { display: none; }
+    #mobile-menu.open { display: flex; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     FLOATING BACKGROUND MEDICAL ELEMENTS
+════════════════════════════════════════════ -->
+<div id="float-container" class="fixed inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+<!-- ══════════════════════════════════════════
+     TOAST CONTAINER
+════════════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+<!-- ══════════════════════════════════════════
+     BACK TO TOP BUTTON
+════════════════════════════════════════════ -->
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">
+  <i class="fa-solid fa-chevron-up"></i>
+</button>
+
+<!-- ══════════════════════════════════════════
+     NAVIGATION
+════════════════════════════════════════════ -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <!-- Logo -->
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+          <i class="fa-solid fa-lungs text-white text-sm"></i>
+        </div>
+        <span class="text-white font-bold text-lg tracking-tight">PneumoAI</span>
+      </div>
+      <!-- Desktop Nav -->
+      <div class="hidden md:flex items-center gap-6 text-sm font-medium">
+        <a href="#about"      class="text-blue-200 hover:text-white transition-colors">About</a>
+        <a href="#symptoms"   class="text-blue-200 hover:text-white transition-colors">Symptoms</a>
+        <a href="#prevention" class="text-blue-200 hover:text-white transition-colors">Prevention</a>
+        <a href="#detection"  class="text-blue-200 hover:text-white transition-colors">Detection</a>
+        <a href="#how"        class="text-blue-200 hover:text-white transition-colors">How It Works</a>
+        <a href="#detection"
+           class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors font-semibold">
+          Start Analysis
+        </a>
+      </div>
+      <!-- Mobile Hamburger -->
+      <button id="hamburger" class="md:hidden text-white text-xl p-2">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+  </div>
+  <!-- Mobile Menu -->
+  <div id="mobile-menu"
+       class="flex-col bg-slate-900/98 backdrop-blur-xl px-6 py-4 gap-4 border-t border-white/10 text-sm font-medium">
+    <a href="#about"      class="text-blue-200 hover:text-white transition-colors" onclick="closeMobileMenu()">About</a>
+    <a href="#symptoms"   class="text-blue-200 hover:text-white transition-colors" onclick="closeMobileMenu()">Symptoms</a>
+    <a href="#prevention" class="text-blue-200 hover:text-white transition-colors" onclick="closeMobileMenu()">Prevention</a>
+    <a href="#detection"  class="text-blue-200 hover:text-white transition-colors" onclick="closeMobileMenu()">Detection</a>
+    <a href="#how"        class="text-blue-200 hover:text-white transition-colors" onclick="closeMobileMenu()">How It Works</a>
+    <a href="#detection"
+       class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors font-semibold text-center"
+       onclick="closeMobileMenu()">
+      Start Analysis
+    </a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     SECTION 1: HERO
+════════════════════════════════════════════ -->
+<section class="bg-medical relative min-h-screen flex items-center justify-center overflow-hidden">
+  <!-- Heartbeat SVG background -->
+  <svg class="absolute inset-0 w-full h-full opacity-5" viewBox="0 0 1440 600" preserveAspectRatio="none">
+    <polyline class="heartbeat-line" points="0,300 120,300 180,200 220,400 260,150 300,450 340,300 480,300 540,260 560,300 1440,300"
+      fill="none" stroke="#60a5fa" stroke-width="3"/>
+  </svg>
+
+  <div class="relative z-10 max-w-5xl mx-auto px-4 text-center pt-24 pb-20">
+    <!-- Badge -->
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass mb-8
+                text-blue-300 text-sm font-medium border border-blue-400/20">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      For Research &amp; Educational Purposes
+    </div>
+
+    <!-- Title -->
+    <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white leading-tight mb-6">
+      AI-Powered
+      <span class="block hero-gradient-text">Pneumonia Detection</span>
+    </h1>
+
+    <!-- Subtitle -->
+    <p class="text-blue-200 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+      Fast, Accurate Chest X-Ray Analysis Using Deep Learning —
+      Powered by a Convolutional Neural Network trained on thousands of medical images.
+    </p>
+
+    <!-- CTA Buttons -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="#detection"
+         class="px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600
+                text-white font-bold text-lg transition-all duration-200 pulse-ring shadow-xl shadow-blue-900/40">
+        <i class="fa-solid fa-microscope mr-2"></i>Start Analysis
+      </a>
+      <a href="#about"
+         class="px-8 py-4 rounded-xl glass border border-white/20 text-white font-semibold text-lg
+                hover:bg-white/15 transition-all duration-200">
+        <i class="fa-solid fa-circle-info mr-2"></i>Learn More
+      </a>
+    </div>
+
+    <!-- Trust indicators - UPDATED with correct metrics -->
+    <div class="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
+      <div class="glass rounded-xl p-4 text-center trust-badge">
+        <div class="text-2xl font-bold text-blue-300 counter" data-target="5216">0</div>
+        <div class="text-blue-200 text-xs mt-1">X-Rays in Training Set</div>
+      </div>
+      <div class="glass rounded-xl p-4 text-center trust-badge">
+        <div class="text-2xl font-bold text-emerald-300 counter" data-target="90">0</div>
+        <div class="text-blue-200 text-xs mt-1">% Model Accuracy</div>
+      </div>
+      <div class="glass rounded-xl p-4 text-center trust-badge">
+        <div class="text-2xl font-bold text-purple-300 counter" data-target="624">0</div>
+        <div class="text-blue-200 text-xs mt-1">Test Images Evaluated</div>
+      </div>
+      <div class="glass rounded-xl p-4 text-center trust-badge">
+        <div class="text-2xl font-bold text-amber-300 counter" data-target="3">0</div>
+        <div class="text-blue-200 text-xs mt-1">Seconds to Result</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll Indicator -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-blue-300 animate-bounce">
+    <i class="fa-solid fa-chevron-down text-xl"></i>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SECTION 2: ABOUT PNEUMONIA
+════════════════════════════════════════════ -->
+<section id="about" class="section-light py-20">
+  <div class="max-w-6xl mx-auto px-4">
+    <!-- Header -->
+    <div class="text-center mb-14 fade-in">
+      <span class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold mb-3">
+        <i class="fa-solid fa-book-medical mr-1"></i>Medical Overview
+      </span>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-800">Understanding Pneumonia</h2>
+      <p class="text-slate-500 mt-3 max-w-2xl mx-auto">A serious lung infection affecting millions worldwide — early detection saves lives.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-10 items-center">
+      <!-- Left: What is it? -->
+      <div class="fade-in-left">
+        <div class="glass-white p-8">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+              <i class="fa-solid fa-lungs text-blue-600 text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800">What Is Pneumonia?</h3>
+          </div>
+          <p class="text-slate-600 leading-relaxed mb-5">
+            Pneumonia is an infection that inflames the air sacs (alveoli) in one or both lungs. The air sacs may fill
+            with fluid or pus, causing symptoms such as a cough, fever, chills, and difficulty breathing.
+          </p>
+          <p class="text-slate-600 leading-relaxed">
+            It can range from mild to life-threatening and is most serious for infants, young children, people older
+            than 65, and individuals with weakened immune systems or chronic conditions.
+          </p>
+
+          <!-- Causes -->
+          <div class="mt-6">
+            <h4 class="font-bold text-slate-700 mb-3"><i class="fa-solid fa-virus text-blue-500 mr-2"></i>Common Causes</h4>
+            <div class="grid grid-cols-3 gap-3">
+              <div class="text-center p-3 rounded-xl bg-blue-50 border border-blue-100">
+                <i class="fa-solid fa-bacteria text-blue-600 text-2xl mb-2"></i>
+                <div class="text-xs font-semibold text-slate-700">Bacteria</div>
+              </div>
+              <div class="text-center p-3 rounded-xl bg-purple-50 border border-purple-100">
+                <i class="fa-solid fa-virus-covid text-purple-600 text-2xl mb-2"></i>
+                <div class="text-xs font-semibold text-slate-700">Viruses</div>
+              </div>
+              <div class="text-center p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                <i class="fa-solid fa-seedling text-emerald-600 text-2xl mb-2"></i>
+                <div class="text-xs font-semibold text-slate-700">Fungi</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Stats + Risk Factors -->
+      <div class="fade-in-right space-y-5">
+        <!-- Stat Cards -->
+        <div class="glass-white p-6">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-globe text-red-500 text-xl"></i>
+            </div>
+            <div>
+              <div class="text-2xl font-extrabold text-red-500">15%</div>
+              <p class="text-slate-600 text-sm leading-relaxed">
+                Pneumonia accounts for <strong>15% of all deaths of children under 5</strong> worldwide,
+                claiming the lives of over 800,000 children each year. (WHO)
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="glass-white p-6">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-earth-americas text-amber-500 text-xl"></i>
+            </div>
+            <div>
+              <div class="text-2xl font-extrabold text-amber-500">2.5M+</div>
+              <p class="text-slate-600 text-sm leading-relaxed">
+                Deaths caused by pneumonia globally each year, making it one of the
+                <strong>leading infectious causes of death</strong> worldwide.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk Factors -->
+        <div class="glass-white p-6">
+          <h4 class="font-bold text-slate-800 mb-4"><i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i>Risk Factors</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="flex items-center gap-2 text-sm text-slate-600">
+              <i class="fa-solid fa-circle text-blue-400 text-xs"></i>Age (under 2 or over 65)
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-600">
+              <i class="fa-solid fa-circle text-blue-400 text-xs"></i>Cigarette smoking
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-600">
+              <i class="fa-solid fa-circle text-blue-400 text-xs"></i>Weakened immune system
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-600">
+              <i class="fa-solid fa-circle text-blue-400 text-xs"></i>COPD / Asthma
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-600">
+              <i class="fa-solid fa-circle text-blue-400 text-xs"></i>Diabetes
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-600">
+              <i class="fa-solid fa-circle text-blue-400 text-xs"></i>Malnutrition
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SECTION 3: SYMPTOMS
+════════════════════════════════════════════ -->
+<section id="symptoms" class="section-white py-20">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="text-center mb-14 fade-in">
+      <span class="inline-block px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-semibold mb-3">
+        <i class="fa-solid fa-stethoscope mr-1"></i>Clinical Signs
+      </span>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-800">Recognizing the Symptoms</h2>
+      <p class="text-slate-500 mt-3 max-w-xl mx-auto">Early recognition of symptoms is critical for timely treatment and recovery.</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Symptom: Fever -->
+      <div class="glass-white p-6 symptom-card fade-in">
+        <div class="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center mb-4">
+          <i class="fa-solid fa-thermometer-three-quarters text-red-500 text-2xl"></i>
+        </div>
+        <h3 class="font-bold text-slate-800 text-lg mb-2">High Fever &amp; Chills</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          A sudden high fever (38°C / 100.4°F or above), often accompanied by shaking chills and profuse sweating.
+          Fever is the body's immune response to infection.
+        </p>
+      </div>
+      <!-- Symptom: Cough -->
+      <div class="glass-white p-6 symptom-card fade-in" style="transition-delay:0.1s">
+        <div class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center mb-4">
+          <i class="fa-solid fa-head-side-cough text-orange-500 text-2xl"></i>
+        </div>
+        <h3 class="font-bold text-slate-800 text-lg mb-2">Persistent Cough</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          A cough that produces thick, greenish, yellowish, or blood-tinged phlegm (mucus).
+          Coughing is the body's mechanism to clear the lungs of fluid.
+        </p>
+      </div>
+      <!-- Symptom: Shortness of breath -->
+      <div class="glass-white p-6 symptom-card fade-in" style="transition-delay:0.2s">
+        <div class="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center mb-4">
+          <i class="fa-solid fa-lungs text-blue-500 text-2xl"></i>
+        </div>
+        <h3 class="font-bold text-slate-800 text-lg mb-2">Shortness of Breath</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          Difficulty breathing, rapid shallow breaths, or feeling like you can't get enough air —
+          even when resting or doing minimal activity.
+        </p>
+      </div>
+      <!-- Symptom: Chest pain -->
+      <div class="glass-white p-6 symptom-card fade-in" style="transition-delay:0.3s">
+        <div class="w-14 h-14 rounded-2xl bg-pink-100 flex items-center justify-center mb-4">
+          <i class="fa-solid fa-heart-crack text-pink-500 text-2xl"></i>
+        </div>
+        <h3 class="font-bold text-slate-800 text-lg mb-2">Chest Pain</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          Sharp or stabbing chest pain that worsens when breathing deeply or coughing,
+          caused by inflammation of the pleura (lining around the lungs).
+        </p>
+      </div>
+      <!-- Symptom: Fatigue -->
+      <div class="glass-white p-6 symptom-card fade-in" style="transition-delay:0.4s">
+        <div class="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mb-4">
+          <i class="fa-solid fa-battery-quarter text-amber-500 text-2xl"></i>
+        </div>
+        <h3 class="font-bold text-slate-800 text-lg mb-2">Fatigue &amp; Weakness</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          Extreme tiredness, low energy, and muscle aches that make it difficult to perform daily activities.
+          The body directs energy to fighting the infection.
+        </p>
+      </div>
+      <!-- Symptom: Confusion -->
+      <div class="glass-white p-6 symptom-card fade-in" style="transition-delay:0.5s">
+        <div class="w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center mb-4">
+          <i class="fa-solid fa-brain text-purple-500 text-2xl"></i>
+        </div>
+        <h3 class="font-bold text-slate-800 text-lg mb-2">Confusion</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          Sudden changes in mental awareness, confusion, or delirium — especially in adults over 65.
+          A serious warning sign that requires immediate medical attention.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SECTION 4: PREVENTION & TREATMENT
+════════════════════════════════════════════ -->
+<section id="prevention" class="section-light py-20">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="text-center mb-14 fade-in">
+      <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold mb-3">
+        <i class="fa-solid fa-shield-heart mr-1"></i>Prevention &amp; Treatment
+      </span>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-800">Protect &amp; Recover</h2>
+      <p class="text-slate-500 mt-3 max-w-xl mx-auto">Proactive steps can significantly reduce risk. If infected, prompt treatment accelerates recovery.</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- Prevention -->
+      <div class="glass-white p-7 fade-in">
+        <div class="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center mb-5">
+          <i class="fa-solid fa-shield text-emerald-600 text-2xl"></i>
+        </div>
+        <h3 class="font-bold text-slate-800 text-xl mb-4">Prevention</h3>
+        <ul class="space-y-3 text-sm text-slate-600">
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-syringe text-emerald-500 mt-0.5"></i>
+            <span><strong>Vaccination</strong> — Pneumococcal, flu, and COVID-19 vaccines reduce risk significantly.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-hand-sparkles text-emerald-500 mt-0.5"></i>
+            <span><strong>Hand Hygiene</strong> — Wash hands frequently with soap for at least 20 seconds.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-ban text-emerald-500 mt-0.5"></i>
+            <span><strong>No Smoking</strong> — Smoking damages lung defenses, increasing pneumonia risk.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-dumbbell text-emerald-500 mt-0.5"></i>
+            <span><strong>Healthy Lifestyle</strong> — Regular exercise, balanced diet, and adequate sleep boost immunity.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Treatment -->
+      <div class="glass-white p-7 fade-in" style="transition-delay:0.1s">
+        <div class="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center mb-5">
+          <i class="fa-solid fa-pills text-blue-600 text-2xl"></i>
+        </div>
+        <h3 class="font-bold text-slate-800 text-xl mb-4">Treatment</h3>
+        <ul class="space-y-3 text-sm text-slate-600">
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-capsules text-blue-500 mt-0.5"></i>
+            <span><strong>Antibiotics</strong> — For bacterial pneumonia; complete the full course as prescribed.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-virus-slash text-blue-500 mt-0.5"></i>
+            <span><strong>Antivirals</strong> — For viral pneumonia (e.g., influenza); antivirals reduce severity.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-bed text-blue-500 mt-0.5"></i>
+            <span><strong>Rest &amp; Hydration</strong> — Plenty of fluids and rest help your body recover.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-hospital text-blue-500 mt-0.5"></i>
+            <span><strong>Hospitalization</strong> — Severe cases may require oxygen therapy and IV antibiotics.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- When to see a doctor -->
+      <div class="glass-white p-7 fade-in" style="transition-delay:0.2s">
+        <div class="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center mb-5">
+          <i class="fa-solid fa-user-doctor text-red-500 text-2xl"></i>
+        </div>
+        <h3 class="font-bold text-slate-800 text-xl mb-4">See a Doctor If...</h3>
+        <ul class="space-y-3 text-sm text-slate-600">
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-circle-exclamation text-red-500 mt-0.5"></i>
+            <span>Fever above 39°C (102°F) that won't come down with medication.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-circle-exclamation text-red-500 mt-0.5"></i>
+            <span>Difficulty breathing or shortness of breath at rest.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-circle-exclamation text-red-500 mt-0.5"></i>
+            <span>Chest pain, rapid heart rate, or bluish lips/fingertips.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-circle-exclamation text-red-500 mt-0.5"></i>
+            <span>Symptoms lasting more than 7 days or worsening after initial improvement.</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <i class="fa-solid fa-circle-exclamation text-red-500 mt-0.5"></i>
+            <span>Child under 2, adult over 65, or immunocompromised individual with any respiratory illness.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SECTION 5: AI DETECTION TOOL
+════════════════════════════════════════════ -->
+<section id="detection" class="bg-medical py-20 relative overflow-hidden">
+  <!-- Subtle grid overlay -->
+  <div class="absolute inset-0 opacity-5"
+       style="background-image: repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(96,165,250,0.5) 40px,rgba(96,165,250,0.5) 41px),
+                                 repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(96,165,250,0.5) 40px,rgba(96,165,250,0.5) 41px);"></div>
+
+  <div class="relative z-10 max-w-3xl mx-auto px-4">
+    <div class="text-center mb-10 fade-in">
+      <span class="inline-block px-3 py-1 rounded-full glass text-blue-300 text-sm font-semibold mb-3 border border-blue-400/20">
+        <i class="fa-solid fa-robot mr-1"></i>AI-Powered Tool
+      </span>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Pneumonia Detection Tool</h2>
+      <p class="text-blue-200 mt-3">Upload a chest X-ray image to receive an AI-generated analysis.</p>
+    </div>
+
+    <!-- Main Tool Card -->
+    <div class="glass rounded-2xl p-6 sm:p-8 fade-in">
+
+      <!-- Drop Zone -->
+      <div id="drop-zone"
+           class="relative rounded-xl p-8 text-center mb-6 min-h-[200px] flex flex-col items-center justify-center"
+           onclick="triggerFileInput()">
+        <!-- Default state -->
+        <div id="upload-prompt">
+          <div class="w-16 h-16 rounded-2xl bg-blue-600/20 flex items-center justify-center mx-auto mb-4">
+            <i class="fa-solid fa-cloud-arrow-up text-blue-400 text-3xl"></i>
+          </div>
+          <p class="text-white font-semibold text-lg">Drag &amp; Drop Chest X-Ray</p>
+          <p class="text-blue-300 text-sm mt-1">or click to browse files</p>
+          <p class="text-blue-400 text-xs mt-3">Accepted formats: JPG, JPEG, PNG &nbsp;·&nbsp; Max size: 10 MB</p>
+        </div>
+        <!-- Preview state -->
+        <div id="image-preview-container" class="hidden w-full">
+          <img id="image-preview" src="" alt="X-ray preview"
+               class="max-h-64 mx-auto rounded-xl object-contain border border-white/20 mb-3" />
+          <div class="flex items-center justify-center gap-2">
+            <span id="file-name" class="text-blue-200 text-sm"></span>
+            <button onclick="removeImage(event)"
+                    class="text-red-400 hover:text-red-300 text-sm flex items-center gap-1">
+              <i class="fa-solid fa-xmark"></i> Remove
+            </button>
+          </div>
+        </div>
+        <input type="file" id="file-input" accept="image/jpeg,image/jpg,image/png" class="hidden" onchange="handleFileSelect(event)" />
+      </div>
+
+      <!-- Analyze Button -->
+      <button id="analyze-btn"
+              onclick="analyzeImage()"
+              disabled
+              class="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700
+                     text-white font-bold text-lg disabled:opacity-40 disabled:cursor-not-allowed
+                     hover:from-blue-500 hover:to-blue-600 transition-all duration-200
+                     flex items-center justify-center gap-2">
+        <i class="fa-solid fa-magnifying-glass-chart"></i>
+        <span id="analyze-btn-text">Select an Image First</span>
+      </button>
+
+      <!-- Loading State -->
+      <div id="loading-state" class="hidden mt-8 text-center">
+        <div class="spinner mx-auto mb-4"></div>
+        <p class="text-blue-200 font-medium">Analyzing X-Ray with AI Model...</p>
+        <p class="text-blue-400 text-sm mt-1">This usually takes 2–3 seconds</p>
+      </div>
+
+      <!-- Result Card -->
+      <div id="result-card" class="hidden mt-8">
+        <div id="result-inner" class="rounded-xl border-2 p-6">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="mt-4 flex items-start gap-2 bg-amber-900/20 border border-amber-500/30 rounded-xl p-4">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400 mt-0.5 flex-shrink-0"></i>
+          <p class="text-amber-200 text-xs leading-relaxed">
+            <strong>Medical Disclaimer:</strong> This tool is for research and educational purposes only.
+            It is <strong>NOT</strong> intended for clinical diagnosis. Always consult a qualified
+            healthcare professional for medical advice and diagnosis.
+          </p>
+        </div>
+
+        <!-- Reset Button -->
+        <button onclick="resetTool()"
+                class="mt-4 w-full py-3 rounded-xl glass border border-white/20 text-blue-200
+                       hover:bg-white/10 transition-all duration-200 font-semibold">
+          <i class="fa-solid fa-rotate-left mr-2"></i>Analyze Another X-Ray
+        </button>
+      </div>
+
+      <!-- Error Card -->
+      <div id="error-card" class="hidden mt-8 rounded-xl border-2 border-red-500/40 bg-red-900/20 p-6">
+        <div class="flex items-start gap-3">
+          <i class="fa-solid fa-circle-xmark text-red-400 text-2xl flex-shrink-0 mt-0.5"></i>
+          <div>
+            <h4 class="text-red-300 font-bold text-lg">Analysis Failed</h4>
+            <p id="error-message" class="text-red-200 text-sm mt-1">An unexpected error occurred.</p>
+          </div>
+        </div>
+        <button onclick="resetTool()"
+                class="mt-4 px-5 py-2 rounded-lg bg-red-600/30 hover:bg-red-600/50 text-red-200
+                       font-semibold text-sm transition-colors">
+          <i class="fa-solid fa-rotate-left mr-1"></i>Try Again
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SECTION 6: HOW IT WORKS
+════════════════════════════════════════════ -->
+<section id="how" class="section-light py-20">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="text-center mb-14 fade-in">
+      <span class="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-sm font-semibold mb-3">
+        <i class="fa-solid fa-gears mr-1"></i>Technology
+      </span>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-800">How It Works</h2>
+      <p class="text-slate-500 mt-3 max-w-xl mx-auto">
+        Our deep learning model uses a Convolutional Neural Network (CNN) trained on over 5,200 labeled chest X-rays.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-8 mb-16">
+      <div class="glass-white p-8 text-center step-card fade-in">
+        <div class="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-5">
+          <i class="fa-solid fa-cloud-arrow-up text-blue-600 text-2xl"></i>
+        </div>
+        <div class="text-4xl font-extrabold text-blue-200 mb-2">01</div>
+        <h3 class="font-bold text-slate-800 text-xl mb-3">Upload X-Ray</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          Drag and drop or browse to upload a chest X-ray image in JPG or PNG format.
+          The image is securely sent to the analysis engine.
+        </p>
+      </div>
+      <div class="glass-white p-8 text-center step-card fade-in" style="transition-delay:0.15s">
+        <div class="w-16 h-16 rounded-2xl bg-purple-100 flex items-center justify-center mx-auto mb-5">
+          <i class="fa-solid fa-microchip text-purple-600 text-2xl"></i>
+        </div>
+        <div class="text-4xl font-extrabold text-purple-200 mb-2">02</div>
+        <h3 class="font-bold text-slate-800 text-xl mb-3">AI Analysis</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          A CNN deep learning model processes the image through multiple convolutional layers,
+          extracting features indicative of pneumonia — fluid, consolidation, infiltrates.
+        </p>
+      </div>
+      <div class="glass-white p-8 text-center step-card fade-in" style="transition-delay:0.3s">
+        <div class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-5">
+          <i class="fa-solid fa-chart-bar text-emerald-600 text-2xl"></i>
+        </div>
+        <div class="text-4xl font-extrabold text-emerald-200 mb-2">03</div>
+        <h3 class="font-bold text-slate-800 text-xl mb-3">Instant Results</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">
+          Receive a binary classification (Pneumonia / Normal) alongside a confidence
+          percentage derived from the model's output probability score.
+        </p>
+      </div>
+    </div>
+
+    <!-- Tech Details - UPDATED with accurate metrics -->
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="glass-white p-6 fade-in-left">
+        <h4 class="font-bold text-slate-800 mb-4"><i class="fa-solid fa-network-wired text-blue-500 mr-2"></i>Model Architecture</h4>
+        <div class="space-y-3 text-sm text-slate-600">
+          <div class="flex justify-between items-center py-2 border-b border-slate-100">
+            <span>Architecture</span><span class="font-semibold text-slate-800">Convolutional Neural Network (CNN)</span>
+          </div>
+          <div class="flex justify-between items-center py-2 border-b border-slate-100">
+            <span>Training Dataset</span><span class="font-semibold text-slate-800">5,216 labeled X-ray images</span>
+          </div>
+          <div class="flex justify-between items-center py-2 border-b border-slate-100">
+            <span>Augmented Samples</span><span class="font-semibold text-slate-800">10,000 (5,216 → 10,000)</span>
+          </div>
+          <div class="flex justify-between items-center py-2 border-b border-slate-100">
+            <span>Dataset Source</span><span class="font-semibold text-slate-800">Chest X-Ray Pneumonia Dataset (Kaggle)</span>
+          </div>
+          <div class="flex justify-between items-center py-2">
+            <span>Classification</span><span class="font-semibold text-slate-800">Binary (Pneumonia / Normal)</span>
+          </div>
+        </div>
+      </div>
+      <div class="glass-white p-6 fade-in-right">
+        <h4 class="font-bold text-slate-800 mb-4"><i class="fa-solid fa-chart-line text-emerald-500 mr-2"></i>Performance Metrics</h4>
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-sm text-slate-600 mb-1">
+              <span>Accuracy</span><span class="font-semibold text-slate-800">90.22%</span>
+            </div>
+            <div class="h-2 bg-slate-100 rounded-full"><div class="h-2 bg-blue-500 rounded-full" style="width:90.22%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm text-slate-600 mb-1">
+              <span>Sensitivity (Recall)</span><span class="font-semibold text-slate-800">93.85%</span>
+            </div>
+            <div class="h-2 bg-slate-100 rounded-full"><div class="h-2 bg-emerald-500 rounded-full" style="width:93.85%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm text-slate-600 mb-1">
+              <span>Precision</span><span class="font-semibold text-slate-800">90.82%</span>
+            </div>
+            <div class="h-2 bg-slate-100 rounded-full"><div class="h-2 bg-purple-500 rounded-full" style="width:90.82%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm text-slate-600 mb-1">
+              <span>F1 Score</span><span class="font-semibold text-slate-800">92.31%</span>
+            </div>
+            <div class="h-2 bg-slate-100 rounded-full"><div class="h-2 bg-amber-500 rounded-full" style="width:92.31%"></div></div>
+          </div>
+          <div class="text-xs text-slate-400 text-center mt-2">
+            * Based on 624 test images
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SECTION 7: DISCLAIMER
+════════════════════════════════════════════ -->
+<section class="section-white py-16">
+  <div class="max-w-4xl mx-auto px-4">
+    <div class="border-2 border-amber-400/50 rounded-2xl p-8 bg-amber-50 fade-in">
+      <div class="flex items-start gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-triangle-exclamation text-amber-600 text-2xl"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-extrabold text-amber-800 mb-3">Important Medical Disclaimer</h2>
+          <div class="space-y-3 text-amber-900 text-sm leading-relaxed">
+            <p>
+              <strong>This tool is strictly for research and educational purposes only.</strong>
+              It is NOT a certified medical device and must NOT be used as a substitute for professional
+              medical advice, diagnosis, or treatment.
+            </p>
+            <p>
+              The AI model may produce incorrect results. A chest X-ray interpretation by this tool
+              does not constitute a clinical diagnosis. False negatives and false positives are possible.
+            </p>
+            <p>
+              <strong>Always consult a qualified and licensed healthcare professional</strong> — including
+              a physician or radiologist — before making any medical decisions based on any imaging results.
+            </p>
+            <p>
+              By using this tool, you acknowledge that it is for informational and educational purposes only,
+              and that the developers and operators of this website bear no responsibility for any decisions
+              made based on its output.
+            </p>
+          </div>
+          <div class="mt-5 flex flex-wrap gap-3">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-200 text-amber-800 text-xs font-semibold">
+              <i class="fa-solid fa-flask"></i> Research Use Only
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-200 text-amber-800 text-xs font-semibold">
+              <i class="fa-solid fa-graduation-cap"></i> Educational Purposes
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-200 text-amber-800 text-xs font-semibold">
+              <i class="fa-solid fa-ban"></i> Not for Clinical Diagnosis
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     SECTION 8: FOOTER
+════════════════════════════════════════════ -->
+<footer class="bg-slate-900 text-slate-400 py-12">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="grid md:grid-cols-3 gap-10 mb-10">
+      <!-- Brand -->
+      <div>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+            <i class="fa-solid fa-lungs text-white text-sm"></i>
+          </div>
+          <span class="text-white font-bold text-lg">PneumoAI</span>
+        </div>
+        <p class="text-sm leading-relaxed">
+          An AI-powered chest X-ray analysis tool built for the research and medical education community.
+          Not intended for clinical use.
+        </p>
+      </div>
+      <!-- Quick Links -->
+      <div>
+        <h4 class="text-white font-semibold mb-4">Quick Links</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="#about"      class="hover:text-blue-400 transition-colors">About Pneumonia</a></li>
+          <li><a href="#symptoms"   class="hover:text-blue-400 transition-colors">Symptoms</a></li>
+          <li><a href="#prevention" class="hover:text-blue-400 transition-colors">Prevention &amp; Treatment</a></li>
+          <li><a href="#detection"  class="hover:text-blue-400 transition-colors">AI Detection Tool</a></li>
+          <li><a href="#how"        class="hover:text-blue-400 transition-colors">How It Works</a></li>
+        </ul>
+      </div>
+      <!-- References -->
+      <div>
+        <h4 class="text-white font-semibold mb-4">References &amp; Resources</h4>
+        <ul class="space-y-2 text-sm">
+          <li>
+            <a href="https://www.who.int/news-room/fact-sheets/detail/pneumonia" target="_blank" rel="noopener"
+               class="hover:text-blue-400 transition-colors">
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs mr-1"></i>WHO — Pneumonia Fact Sheet
+            </a>
+          </li>
+          <li>
+            <a href="https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia" target="_blank" rel="noopener"
+               class="hover:text-blue-400 transition-colors">
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs mr-1"></i>Kaggle Chest X-Ray Dataset
+            </a>
+          </li>
+          <li>
+            <a href="https://www.cell.com/cell/fulltext/S0092-8674(18)30154-5" target="_blank" rel="noopener"
+               class="hover:text-blue-400 transition-colors">
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs mr-1"></i>Rajpurkar et al. CheXNet (2017)
+            </a>
+          </li>
+          <li>
+            <a href="https://www.cdc.gov/pneumonia/" target="_blank" rel="noopener"
+               class="hover:text-blue-400 transition-colors">
+              <i class="fa-solid fa-arrow-up-right-from-square text-xs mr-1"></i>CDC — Pneumonia
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <!-- Bottom bar -->
+    <div class="border-t border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+      <span>&copy; <span id="year"></span> PneumoAI. For Research &amp; Educational Use Only.</span>
+      <span class="flex items-center gap-1">
+        Built with <i class="fa-solid fa-heart text-red-500"></i> for the medical research community.
+      </span>
+    </div>
+  </div>
+</footer>
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
+<script>
+  /* ── Config ── */
+  const API_URL = "/predict";
+  const MAX_FILE_SIZE_MB = 10;
+
+  /* ── State ── */
+  let selectedFile = null;
+
+  /* ── Year ── */
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  /* ─────────────────────────────────────────
+     FLOATING MEDICAL ELEMENTS
+  ───────────────────────────────────────── */
+  const floatIcons = [
+    'fa-lungs', 'fa-plus', 'fa-heartbeat', 'fa-stethoscope',
+    'fa-dna', 'fa-microscope', 'fa-syringe', 'fa-heart-pulse'
+  ];
+  const container = document.getElementById('float-container');
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement('i');
+    el.className = `fa-solid ${floatIcons[i % floatIcons.length]} float-el text-4xl`;
+    el.style.left = Math.random() * 100 + '%';
+    el.style.animationDuration = (12 + Math.random() * 20) + 's';
+    el.style.animationDelay = (Math.random() * 20) + 's';
+    el.style.fontSize = (1.5 + Math.random() * 2.5) + 'rem';
+    container.appendChild(el);
+  }
+
+  /* ─────────────────────────────────────────
+     NAVBAR
+  ───────────────────────────────────────── */
+  window.addEventListener('scroll', () => {
+    const nav = document.getElementById('navbar');
+    nav.classList.toggle('scrolled', window.scrollY > 50);
+
+    const btn = document.getElementById('back-to-top');
+    btn.classList.toggle('visible', window.scrollY > 400);
+  });
+
+  document.getElementById('hamburger').addEventListener('click', () => {
+    document.getElementById('mobile-menu').classList.toggle('open');
+  });
+  function closeMobileMenu() {
+    document.getElementById('mobile-menu').classList.remove('open');
+  }
+
+  /* ─────────────────────────────────────────
+     SCROLL FADE-IN OBSERVER
+  ───────────────────────────────────────── */
+  const fadeObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        fadeObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.fade-in, .fade-in-left, .fade-in-right').forEach(el => {
+    fadeObserver.observe(el);
+  });
+
+  /* ─────────────────────────────────────────
+     ANIMATED COUNTERS
+  ───────────────────────────────────────── */
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        animateCounter(e.target);
+        counterObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('.counter').forEach(el => counterObserver.observe(el));
+
+  function animateCounter(el) {
+    const target = parseInt(el.dataset.target, 10);
+    const duration = 1800;
+    const step = 16;
+    const steps = duration / step;
+    let current = 0;
+    const increment = target / steps;
+    const timer = setInterval(() => {
+      current = Math.min(current + increment, target);
+      el.textContent = target >= 1000
+        ? Math.round(current).toLocaleString() + '+'
+        : Math.round(current);
+      if (current >= target) clearInterval(timer);
+    }, step);
+  }
+
+  /* ─────────────────────────────────────────
+     TOAST NOTIFICATIONS
+  ───────────────────────────────────────── */
+  function showToast(message, type = 'info') {
+    const colors = {
+      success: 'bg-emerald-600',
+      error:   'bg-red-600',
+      info:    'bg-blue-600',
+      warning: 'bg-amber-600'
+    };
+    const icons = {
+      success: 'fa-circle-check',
+      error:   'fa-circle-xmark',
+      info:    'fa-circle-info',
+      warning: 'fa-triangle-exclamation'
+    };
+    const toast = document.createElement('div');
+    toast.className = `toast ${colors[type] || colors.info}`;
+    toast.innerHTML = `<i class="fa-solid ${icons[type]} flex-shrink-0"></i><span>${message}</span>`;
+    document.getElementById('toast-container').appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add('out');
+      setTimeout(() => toast.remove(), 350);
+    }, 3500);
+  }
+
+  /* ─────────────────────────────────────────
+     FILE HANDLING
+  ───────────────────────────────────────── */
+  function triggerFileInput() {
+    if (!document.getElementById('image-preview-container').classList.contains('hidden')) return;
+    document.getElementById('file-input').click();
+  }
+
+  function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) processFile(file);
+  }
+
+  function processFile(file) {
+    // Validate type
+    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+      showToast('Invalid file type. Please upload JPG or PNG.', 'error');
+      return;
+    }
+    // Validate size
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      showToast(`File too large. Maximum size is ${MAX_FILE_SIZE_MB} MB.`, 'error');
+      return;
+    }
+
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('image-preview').src = e.target.result;
+      document.getElementById('file-name').textContent = file.name;
+      document.getElementById('upload-prompt').classList.add('hidden');
+      document.getElementById('image-preview-container').classList.remove('hidden');
+
+      const btn = document.getElementById('analyze-btn');
+      btn.disabled = false;
+      document.getElementById('analyze-btn-text').textContent = 'Analyze X-Ray';
+
+      // Hide any previous result/error
+      document.getElementById('result-card').classList.add('hidden');
+      document.getElementById('error-card').classList.add('hidden');
+
+      showToast('X-ray image loaded successfully.', 'success');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImage(event) {
+    event.stopPropagation();
+    resetTool();
+    showToast('Image removed.', 'info');
+  }
+
+  // Drag and drop
+  const dropZone = document.getElementById('drop-zone');
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  });
+
+  /* ─────────────────────────────────────────
+     ANALYZE (API CALL)
+  ───────────────────────────────────────── */
+  async function analyzeImage() {
+    if (!selectedFile) return;
+
+    // UI: show loading
+    document.getElementById('analyze-btn').disabled = true;
+    document.getElementById('analyze-btn-text').textContent = 'Analyzing...';
+    document.getElementById('loading-state').classList.remove('hidden');
+    document.getElementById('result-card').classList.add('hidden');
+    document.getElementById('error-card').classList.add('hidden');
+
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Server returned ${response.status}: ${text.slice(0, 120)}`);
+      }
+
+      const data = await response.json();
+
+      // Validate response shape
+      if (typeof data.prediction === 'undefined' || typeof data.confidence === 'undefined') {
+        throw new Error('Unexpected response format from server.');
+      }
+
+      showResult(data.prediction, parseFloat(data.confidence));
+      showToast('Analysis complete!', 'success');
+
+    } catch (err) {
+      showError(err.message || 'Network error — please check your connection.');
+      showToast('Analysis failed. See error details below.', 'error');
+    } finally {
+      document.getElementById('loading-state').classList.add('hidden');
+      document.getElementById('analyze-btn').disabled = false;
+      document.getElementById('analyze-btn-text').textContent = 'Analyze X-Ray';
+    }
+  }
+
+  /* ─────────────────────────────────────────
+     SHOW RESULT
+  ───────────────────────────────────────── */
+  function showResult(prediction, confidence) {
+    const isPneumonia = prediction.toLowerCase().includes('pneumonia');
+    const color   = isPneumonia ? 'red'     : 'emerald';
+    const bgClass = isPneumonia ? 'bg-red-900/20 border-red-500/50' : 'bg-emerald-900/20 border-emerald-500/50';
+    const badgeBg = isPneumonia ? 'bg-red-600' : 'bg-emerald-600';
+    const icon    = isPneumonia ? 'fa-triangle-exclamation' : 'fa-circle-check';
+    const label   = isPneumonia ? 'Pneumonia Detected' : 'Normal — No Pneumonia';
+    const barColor= isPneumonia ? 'bg-red-500' : 'bg-emerald-500';
+    const conf    = Math.min(Math.max(confidence, 0), 100).toFixed(1);
+
+    const inner = document.getElementById('result-inner');
+    inner.className = `rounded-xl border-2 p-6 ${bgClass}`;
+    inner.innerHTML = `
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <span class="${badgeBg} text-white px-4 py-2 rounded-xl font-bold text-lg flex items-center gap-2">
+            <i class="fa-solid ${icon}"></i>${label}
+          </span>
+        </div>
+        <div class="text-3xl font-extrabold text-${color}-400">${conf}%</div>
+      </div>
+
+      <p class="text-slate-300 text-sm mb-4">Confidence Score</p>
+
+      <div class="h-4 bg-slate-700 rounded-full overflow-hidden mb-2">
+        <div class="progress-bar-fill ${barColor} h-full rounded-full" style="width: 0%"
+             data-width="${conf}"></div>
+      </div>
+      <div class="flex justify-between text-xs text-slate-400">
+        <span>0%</span><span>50%</span><span>100%</span>
+      </div>
+
+      <div class="mt-5 grid grid-cols-2 gap-4 text-sm">
+        <div class="bg-slate-800/50 rounded-xl p-3">
+          <div class="text-slate-400 text-xs mb-1">Classification</div>
+          <div class="font-bold text-white">${prediction}</div>
+        </div>
+        <div class="bg-slate-800/50 rounded-xl p-3">
+          <div class="text-slate-400 text-xs mb-1">Confidence</div>
+          <div class="font-bold text-white">${conf}%</div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('result-card').classList.remove('hidden');
+
+    // Animate bar after render
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const bar = inner.querySelector('.progress-bar-fill');
+        if (bar) bar.style.width = bar.dataset.width + '%';
+      });
+    });
+  }
+
+  /* ─────────────────────────────────────────
+     SHOW ERROR
+  ───────────────────────────────────────── */
+  function showError(message) {
+    document.getElementById('error-message').textContent = message;
+    document.getElementById('error-card').classList.remove('hidden');
+  }
+
+  /* ─────────────────────────────────────────
+     RESET TOOL
+  ───────────────────────────────────────── */
+  function resetTool() {
+    selectedFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('image-preview').src = '';
+    document.getElementById('file-name').textContent = '';
+    document.getElementById('upload-prompt').classList.remove('hidden');
+    document.getElementById('image-preview-container').classList.add('hidden');
+    document.getElementById('result-card').classList.add('hidden');
+    document.getElementById('error-card').classList.add('hidden');
+    document.getElementById('loading-state').classList.add('hidden');
+    const btn = document.getElementById('analyze-btn');
+    btn.disabled = true;
+    document.getElementById('analyze-btn-text').textContent = 'Select an Image First';
+  }
+</script>
+</body>
+</html>
